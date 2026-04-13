@@ -3,7 +3,7 @@ import logging
 
 def infos_auxiliares(df):
 
-    with open("Example_1/logs/infos_auxiliares.txt", "w", encoding="utf-8") as f:
+    with open("Example_2/logs/infos_auxiliares.txt", "w", encoding="utf-8") as f:
         f.write("=== RELATÓRIO DE DADOS ===\n\n")
 
         for col in df.columns:
@@ -25,7 +25,7 @@ def infos_auxiliares(df):
             f.write("-" * 40 + "\n")
 
 
-def relatorio_qualidade(df, df_original=None, path="Example_1/logs/relatorio_qualidade.txt"):
+def relatorio_qualidade(df, df_original=None, path="Example_2/logs/relatorio_qualidade.txt"):
 
     logger = logging.getLogger("relatorio")
     logger.setLevel(logging.INFO)

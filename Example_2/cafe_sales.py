@@ -1,20 +1,27 @@
 import pandas as pd
-import numpy as np
+from logs import infos_auxiliares, relatorio_qualidade
 import logging
-from datetime import datetime
 
-# =========================
-# CONFIG LOG
-# =========================
+##########################################
+# ⚙️ CONFIG LOG
+##########################################
+
+logging.basicConfig(
+    filename="Example_2/logs/logs_pipeline.txt",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
 
 
-def configurar_log():
-    logging.basicConfig(
-        filename="Example_2/pipeline_log.txt",
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        encoding="utf-8"
-    )
+def log_section(txt):
+    logging.info(txt)
+    logging.info("\n" + "="*50)
+    logging.info("="*50)
+
+##########################################
+# 🔎 ANÁLISE
+##########################################
 
 
 def log(msg):
@@ -22,9 +29,6 @@ def log(msg):
     logging.info(msg)
 
 
-# =========================
-# INFO INICIAL
-# =========================
 def info_basic(df):
     log(f"\n===== INFO BÁSICA =====")
     log(f"HEAD:\n{df.head(10)}")
@@ -32,155 +36,172 @@ def info_basic(df):
     log(f"Describe:\n{df.describe()}")
     log(f"Tipos:\n{df.dtypes}")
     log(f"Colunas: {list(df.columns)}")
-    log(f"Nulos:\n{df.isnull().sum()}")
-    log(f"Duplicados: {df.duplicated().sum()}")
 
 
-# =========================
-# VALIDANDO DADOS
-# =========================
-def tratar_dados(df):
+def padronizar_colunas(df):
+    logging.info("Padronizando nomes das colunas...")
 
-    return df
-
-
-# =========================
-# TRATAR NULOS
-# =========================
-def tratar_nulos(df):
-    log("\n===== TRATAMENTO DE NULOS =====")
-
-    total_linhas = len(df)
-
-    for col in df.columns:
-        qtd_nulos = df[col].isnull().sum()
-        perc = (qtd_nulos / total_linhas) * 100
-
-        if qtd_nulos == 0:
-            continue
-
-        log(f"Coluna: {col} | Nulos: {qtd_nulos} ({perc:.2f}%)")
-
-        if perc < 5:
-            log(f"-> Removendo linhas com nulos em {col}")
-            df = df.dropna(subset=[col])
-        else:
-            log(f"-> ATENÇÃO: {col} tem mais de 5% de nulos. Necessário análise.")
-
-            # 🔧 PERSONALIZAÇÃO AQUI
-            if df[col].dtype == 'object':
-                log(f"-> Preenchendo com 'DESCONHECIDO'")
-                df[col] = df[col].fillna("DESCONHECIDO")
-            else:
-                media = df[col].mean()
-                log(f"-> Preenchendo com média: {media}")
-                df[col] = df[col].fillna(media)
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+    )
 
     return df
 
 
-# =========================
-# TRATAR DUPLICADOS
-# =========================
-def tratar_duplicados(df):
-    log("\n===== TRATAMENTO DE DUPLICADOS =====")
-
-    duplicados = df.duplicated().sum()
-    log(f"Duplicados encontrados: {duplicados}")
-
-    if duplicados > 0:
-        df = df.drop_duplicates()
-        log("Duplicados removidos")
-
-    return df
-
-
-# =========================
-# PADRONIZAR TEXTOS
-# =========================
 def padronizar_textos(df):
-    log("\n===== PADRONIZAÇÃO DE TEXTOS =====")
+    logging.info("Padronizando textos...")
 
-    for col in df.select_dtypes(include='object').columns:
-        log(f"Padronizando coluna: {col}")
-
+    for col in df.select_dtypes(include=['object', 'string']).columns:
         df[col] = df[col].astype(str).str.strip().str.lower()
 
-        # 🔧 PERSONALIZAÇÃO AQUI
-        # Exemplo:
-        # df[col] = df[col].str.replace("á", "a")
+    return df
+
+
+def tratar_valores_invalidos(df):
+    logging.info("Tratando valores inválidos...")
+
+    valores_invalidos = ["error", "unknown"]
+
+    for col in df.columns:
+        df[col] = df[col].astype(str).str.lower()
+
+        df[col] = df[col].replace(valores_invalidos, pd.NA)
 
     return df
 
 
-# =========================
-# PADRONIZAR CATEGORIAS
-# =========================
-def padronizar_categorias(df):
-    log("\n===== PADRONIZAÇÃO DE CATEGORIAS =====")
+def converter_tipos(df):
+    logging.info("Convertendo tipos...")
 
-    # 🔧 PERSONALIZAÇÃO FORTE AQUI
-    # Exemplo de mapeamento:
-    mapas = {
-        # "sexo": {"m": "masculino", "f": "feminino"}
-    }
+    df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
+    df['price_per_unit'] = pd.to_numeric(df['price_per_unit'], errors='coerce')
+    df['total_spent'] = pd.to_numeric(df['total_spent'], errors='coerce')
 
-    for col, mapa in mapas.items():
+    df['transaction_date'] = pd.to_datetime(
+        df['transaction_date'], errors='coerce')
+
+    # 🔥 corrigir apenas quando necessário
+    mask_corrigir = (
+        df['total_spent'].isna() |
+        (df['total_spent'] != df['quantity'] * df['price_per_unit'])
+    )
+
+    qtd = mask_corrigir.sum()
+
+    df.loc[mask_corrigir, 'total_spent'] = (
+        df['quantity'] * df['price_per_unit']
+    )
+
+    logging.info(f"{qtd} valores de Total Spent corrigidos")
+
+    return df
+
+
+def tratar_nulos(df):
+    logging.info("Tratando valores nulos...")
+
+    # 🔴 colunas críticas → remover
+    df = df[df['quantity'].notna()]
+    df = df[df['price_per_unit'].notna()]
+
+    # 🟡 categóricas → preencher
+    for col in ['item', 'payment_method', 'location']:
         if col in df.columns:
-            log(f"Padronizando categorias da coluna: {col}")
-            df[col] = df[col].map(mapa).fillna(df[col])
+            df[col] = df[col].fillna("desconhecido")
+
+    # 🔴 data → geralmente remover
+    df = df[df['transaction_date'].notna()]
 
     return df
 
 
-# =========================
-# VALIDAR DADOS
-# =========================
+def tratar_duplicados(df):
+
+    log_section("Tratando duplicadas...")
+    duplicados = df.duplicated().sum()
+    logging.info(f"\nDuplicados encontrados: {duplicados}")
+
+    logging.info("Removendo duplicados...")
+
+    antes = len(df)
+
+    df = df.drop_duplicates()
+
+    depois = len(df)
+
+    logging.info(f"Removidos {antes - depois} registros duplicados")
+    return df
+
+
 def validar_dados(df):
-    log("\n===== VALIDAÇÃO DE DADOS =====")
+    logging.info("Validando dados...")
 
-    # 🔧 PERSONALIZAÇÃO FORTE AQUI
-    # Exemplo:
-    if "idade" in df.columns:
-        invalidos = df[df["idade"] < 0]
-        log(f"Idades inválidas: {len(invalidos)}")
+    antes = len(df)
 
-        df = df[df["idade"] >= 0]
+    # 🔴 valores negativos
+    neg_qtd = (df['quantity'] < 0).sum()
+    neg_price = (df['price_per_unit'] < 0).sum()
+    neg_total = (df['total_spent'] < 0).sum()
+
+    logging.info(f"Quantity negativa: {neg_qtd}")
+    logging.info(f"Price negativo: {neg_price}")
+    logging.info(f"Total negativo: {neg_total}")
+
+    df = df[df['quantity'] >= 0]
+    df = df[df['price_per_unit'] >= 0]
+    df = df[df['total_spent'] >= 0]
+
+    # 🔴 valores absurdos (opcional)
+    high_total = (df['total_spent'] > 1000).sum()
+    logging.info(f"Total muito alto: {high_total}")
+
+    df = df[df['total_spent'] <= 1000]
+
+    # 🔴 inconsistência (garantia final)
+    inconsistentes = (
+        df['total_spent'] != df['quantity'] * df['price_per_unit']
+    ).sum()
+
+    logging.info(f"Inconsistências restantes: {inconsistentes}")
+
+    depois = len(df)
+
+    logging.info(f"Total removido na validação: {antes - depois}")
 
     return df
 
 
-# =========================
-# PIPELINE PRINCIPAL
-# =========================
 def pipeline(df):
-    configurar_log()
 
-    log("\n=========== INICIO PIPELINE ===========")
+    log_section("🚀 INÍCIO DA PIPELINE")
 
     info_basic(df)
-    df = tratar_dados(df)
-    # df = tratar_nulos(df)
-    # df = tratar_duplicados(df)
-    # df = padronizar_textos(df)
-    # df = padronizar_categorias(df)
-    # df = validar_dados(df)
+    infos_auxiliares(df)
 
-    # info_basic(df)
+    df = padronizar_colunas(df)
+    df = padronizar_textos(df)
+    df = tratar_valores_invalidos(df)
+    df = converter_tipos(df)
+    df = tratar_nulos(df)
+    df = tratar_duplicados(df)
+    df = validar_dados(df)
 
-    # log("\n=========== FIM PIPELINE ===========")
+    info_basic(df)
+
+    log_section("✅ PIPELINE FINALIZADA")
 
     return df
 
 
-# =========================
-# EXECUÇÃO
-# =========================
 if __name__ == "__main__":
-    # 🔧 ALTERAR AQUI PARA SEU DATASET
-    df = pd.read_csv("Example_2\data\dirty_cafe_sales.csv")
 
-    df_tratado = pipeline(df)
+    df = pd.read_csv("Example_2/data/dirty_cafe_sales.csv")
 
-    # 🔧 OPCIONAL: salvar resultado
-    # df_tratado.to_csv("Example_2\data\dados_tratados.csv", index=False)
+    df_limpo = pipeline(df)
+
+    relatorio_qualidade(df_limpo, df)
+
+    df_limpo.to_csv("Example_2/data/dados_limpos.csv", index=False)

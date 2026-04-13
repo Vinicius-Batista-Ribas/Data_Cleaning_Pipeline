@@ -1,5 +1,5 @@
 import pandas as pd
-from logs import infos_auxiliares
+from logs import infos_auxiliares, relatorio_qualidade
 import logging
 
 ##########################################
@@ -38,7 +38,20 @@ def info_basic(df):
     log(f"Colunas: {list(df.columns)}")
 
 
-def padronizar_dados(df):
+def padronizar_colunas(df):
+    logging.info("Padronizando nomes das colunas...")
+
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+    )
+
+    return df
+
+
+def padronizar_textos(df):
 
     logging.info("Padronizando textos...")
 
@@ -200,7 +213,8 @@ def pipeline(df):
     info_basic(df)
     infos_auxiliares(df)
 
-    df = padronizar_dados(df)
+    df = padronizar_colunas(df)
+    df = padronizar_textos(df)
     df = tratar_nulos(df)
     df = tratar_duplicados(df)
     df = tratar_amount(df)
@@ -218,5 +232,5 @@ if __name__ == "__main__":
     df = pd.read_csv("Example_1/data/trx-10k.csv")
 
     df_limpo = pipeline(df)
-
+    relatorio_qualidade(df_limpo, df)
     df_limpo.to_csv("Example_2/dados_limpos.csv", index=False)
