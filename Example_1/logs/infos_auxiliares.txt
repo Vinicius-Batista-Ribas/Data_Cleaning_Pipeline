@@ -1,0 +1,67 @@
+=== RELATÓRIO DE DADOS ===
+
+Coluna: status
+Tipo: str
+Qtd únicos: 6
+% nulos: 0.00%
+Valores únicos: <StringArray>
+['success', 'fail', 'Success', 'failed', 'succeed', 'FAIL']
+Length: 6, dtype: str
+----------------------------------------
+Coluna: time
+Tipo: str
+Qtd únicos: 1724
+% nulos: 0.00%
+Top 5 valores:
+time
+2025-09-29 11:11:00    25
+2025-09-23 11:11:00    24
+2025-09-02 11:11:00    22
+2025-09-01 11:11:00    21
+2025-09-26 21:23:00    20
+Name: count, dtype: int64
+----------------------------------------
+Coluna: card_type
+Tipo: str
+Qtd únicos: 10
+% nulos: 3.11%
+Valores únicos: <StringArray>
+[       'Visa',    'MastCard',    'Discover', 'Master-Card',        'Amex',
+        'visa',  'MasterCard',         'Vsa',        'VISA', 'Master Card']
+Length: 10, dtype: str
+----------------------------------------
+Coluna: city
+Tipo: str
+Qtd únicos: 14
+% nulos: 1.16%
+Valores únicos: <StringArray>
+[ 'Tehran', 'Tehran ', 'Isfahan',  'Tabriz',  'Shiraz',  'TEHRAN',   'karaj',
+   'Ahvaz',     'THR',     'Qom', 'Mashhad',  'tehr@n',   'Karaj',   'ThRan']
+Length: 14, dtype: str
+----------------------------------------
+Coluna: amount
+Tipo: float64
+Qtd únicos: 52
+% nulos: 0.00%
+Top 5 valores:
+amount
+ 0.0          981
+-5000.0       727
+ 177050.0     438
+-999999.0     385
+ 1578078.0    340
+Name: count, dtype: int64
+----------------------------------------
+Coluna: id
+Tipo: int64
+Qtd únicos: 99
+% nulos: 0.00%
+Top 5 valores:
+id
+54    123
+89    121
+74    121
+52    120
+10    120
+Name: count, dtype: int64
+----------------------------------------

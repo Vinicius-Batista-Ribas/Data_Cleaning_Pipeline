@@ -12,9 +12,8 @@ logging.basicConfig(
 )
 
 
-def log_section(titulo):
+def log_section():
     logging.info("\n" + "="*50)
-    logging.info(f"📌 {titulo}")
     logging.info("="*50)
 
 ##########################################
@@ -22,10 +21,12 @@ def log_section(titulo):
 ##########################################
 
 
-def info_basic(df, titulo="DATAFRAME"):
-    log_section(f"ANÁLISE - {titulo}")
+def info_basic(df):
+
+    log_section(f"ANÁLISE")
+
     logging.info(f"📏 Shape: {df.shape}")
-    logging.info("\n🔍 HEAD:\n%s", df.head(3))
+    logging.info("\n🔍 HEAD:\n%s", df.head(10))
     logging.info("\n📊 DESCRIBE:\n%s", df.describe(include='all'))
 
 ##########################################
@@ -36,37 +37,11 @@ def info_basic(df, titulo="DATAFRAME"):
 def tratar_nulos(df):
     log_section("🧹 TRATAMENTO DE NULOS")
 
-    antes = df.shape[0]
-    nulos = df.isnull().sum().sum()
-
-    logging.info(f"🔎 Total de nulos: {nulos}")
-
-    df = df.dropna()
-
-    depois = df.shape[0]
-
-    logging.info(f"📉 Linhas antes: {antes}")
-    logging.info(f"📈 Linhas depois: {depois}")
-    logging.info(f"❌ Removidas: {antes - depois}")
-
     return df
 
 
 def tratar_duplicados(df):
     log_section("🔁 TRATAMENTO DE DUPLICADOS")
-
-    antes = df.shape[0]
-    duplicados = df.duplicated().sum()
-
-    logging.info(f"🔁 Duplicados encontrados: {duplicados}")
-
-    df = df.drop_duplicates()
-
-    depois = df.shape[0]
-
-    logging.info(f"📉 Linhas antes: {antes}")
-    logging.info(f"📈 Linhas depois: {depois}")
-    logging.info(f"❌ Removidas: {antes - depois}")
 
     return df
 
@@ -77,19 +52,6 @@ def tratar_duplicados(df):
 
 def padronizar_textos(df):
     log_section("🧩 PADRONIZAÇÃO DE TEXTOS")
-
-    colunas = df.select_dtypes(include=['object']).columns
-
-    for col in colunas:
-        valores_antes = df[col].unique()[:5]
-
-        df[col] = df[col].str.strip().str.lower()
-
-        valores_depois = df[col].unique()[:5]
-
-        logging.info(f"\n➡️ Coluna: {col}")
-        logging.info(f"Antes: {valores_antes}")
-        logging.info(f"Depois: {valores_depois}")
 
     return df
 
@@ -107,17 +69,6 @@ def padronizar_categorias(df):
 def validar_dados(df):
     log_section("✅ VALIDAÇÃO DE DADOS")
 
-    antes = df.shape[0]
-
-    # EXEMPLO:
-    # df = df[df["valor"] >= 0]
-
-    depois = df.shape[0]
-
-    logging.info(f"📉 Linhas antes: {antes}")
-    logging.info(f"📈 Linhas depois: {depois}")
-    logging.info(f"❌ Removidas: {antes - depois}")
-
     return df
 
 ##########################################
@@ -126,25 +77,16 @@ def validar_dados(df):
 
 
 def pipeline(df):
+
     log_section("🚀 INÍCIO DA PIPELINE")
 
-    info_basic(df, "ANTES")
+    info_basic(df)
 
-    linhas_iniciais = df.shape[0]
-
-    df = tratar_nulos(df)
-    df = tratar_duplicados(df)
-    df = padronizar_textos(df)
-    df = padronizar_categorias(df)
-    df = validar_dados(df)
-
-    linhas_finais = df.shape[0]
-
-    log_section("📊 RESUMO FINAL")
-
-    logging.info(f"📌 Linhas iniciais: {linhas_iniciais}")
-    logging.info(f"📌 Linhas finais: {linhas_finais}")
-    logging.info(f"📌 Total removido: {linhas_iniciais - linhas_finais}")
+    # df = tratar_nulos(df)
+    # df = tratar_duplicados(df)
+    # df = padronizar_textos(df)
+    # df = padronizar_categorias(df)
+    # df = validar_dados(df)
 
     info_basic(df, "DEPOIS")
 
